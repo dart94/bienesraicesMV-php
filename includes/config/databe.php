@@ -1,20 +1,22 @@
 <?php
 
-function conectarDB(): mysqli
-{
-    $db = new mysqli(
-        $_ENV['DB_HOST'],
-        $_ENV['DB_USER'],
-        $_ENV['DB_PASS'],
-        $_ENV['DB_NAME']
-    );
+require_once __DIR__ . '/../vendor/autoload.php';
 
-    $db->set_charset('utf8');
+// Cargar variables del .env
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../includes');
+$dotenv->load();
 
-    if (!$db) {
-        echo "No se pudo conectar";
-        exit;
+try {
+    $db_host = getenv('DB_HOST') ?: 'localhost';
+    $db_user = getenv('DB_USER') ?: 'root';
+    $db_pass = getenv('DB_PASS') ?: '';
+    $db_name = getenv('DB_NAME') ?: '';
+
+    $mysqli = new mysqli($db_host, $db_user, $db_pass, $db_name);
+
+    if ($mysqli->connect_error) {
+        throw new Exception("Error de conexión: " . $mysqli->connect_error);
     }
-
-    return $db;
+} catch (Exception $e) {
+    die($e->getMessage());
 }
