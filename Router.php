@@ -44,7 +44,7 @@ class Router {
             call_user_func($fn,$this);
 
         }else{
-            echo "Por el momento no se puede acceder a la ruta $urlActual";
+            echo "Por el momento no se puede acceder a la ruta gracias $urlActual";
         }
     }
 
