@@ -1,5 +1,5 @@
-vendor/
+echo "vendor/
 node_modules/
 .git/
 .env
-*.log
+*.log" > .dockerignore
