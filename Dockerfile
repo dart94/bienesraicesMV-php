@@ -36,8 +36,15 @@ else\n\
 fi' > /usr/local/bin/docker-healthcheck \
 && chmod +x /usr/local/bin/docker-healthcheck
 
-# Script de inicio
+# Crear script de inicio que incluye la espera por la base de datos
 RUN echo '#!/bin/bash\n\
+\n\
+# Esperar a que la base de datos esté lista\n\
+until mysql -h"$MYSQL_HOST" -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -e "SHOW DATABASES;" &> /dev/null\n\
+do\n\
+    echo "Waiting for MySQL to be ready..."\n\
+    sleep 3\n\
+done\n\
 \n\
 # Configurar el puerto\n\
 export APACHE_PORT=${PORT:-80}\n\
@@ -56,8 +63,7 @@ echo json_encode([\"status\" => \"healthy\"]);\n\
 chown -R www-data:www-data /var/www/html\n\
 \n\
 # Iniciar Apache en primer plano\n\
-exec apache2-foreground\n'\
-> /usr/local/bin/start-apache.sh \
+exec apache2-foreground\n' > /usr/local/bin/start-apache.sh \
 && chmod +x /usr/local/bin/start-apache.sh
 
 # Configurar PHP
@@ -65,7 +71,14 @@ RUN echo "error_reporting = E_ALL" >> /usr/local/etc/php/conf.d/error-reporting.
     && echo "display_errors = On" >> /usr/local/etc/php/conf.d/error-reporting.ini \
     && echo "log_errors = On" >> /usr/local/etc/php/conf.d/error-reporting.ini
 
-WORKDIR /var/www/html
+# Optimización de Apache
+RUN echo "MaxRequestWorkers 5" >> /etc/apache2/apache2.conf
+RUN echo "StartServers 1" >> /etc/apache2/apache2.conf
+RUN echo "MinSpareServers 1" >> /etc/apache2/apache2.conf
+RUN echo "MaxSpareServers 2" >> /etc/apache2/apache2.conf
+
+# Configuración de PHP
+RUN echo "memory_limit = 64M" >> /usr/local/etc/php/php.ini
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
@@ -74,13 +87,5 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
 # Exponer puerto
 EXPOSE ${PORT}
 
-# Comando de inicio
+# Comando de inicio combinado
 CMD ["/usr/local/bin/start-apache.sh"]
-
-RUN echo "MaxRequestWorkers 5" >> /etc/apache2/apache2.conf
-RUN echo "StartServers 1" >> /etc/apache2/apache2.conf
-RUN echo "MinSpareServers 1" >> /etc/apache2/apache2.conf
-RUN echo "MaxSpareServers 2" >> /etc/apache2/apache2.conf
-RUN echo "memory_limit = 64M" >> /usr/local/etc/php/php.ini
-COPY wait-for-db.sh /usr/local/bin/wait-for-db.sh
-CMD ["bash", "/usr/local/bin/wait-for-db.sh"]
