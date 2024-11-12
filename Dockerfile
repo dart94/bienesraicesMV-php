@@ -76,3 +76,11 @@ EXPOSE ${PORT}
 
 # Comando de inicio
 CMD ["/usr/local/bin/start-apache.sh"]
+
+RUN echo "MaxRequestWorkers 5" >> /etc/apache2/apache2.conf
+RUN echo "StartServers 1" >> /etc/apache2/apache2.conf
+RUN echo "MinSpareServers 1" >> /etc/apache2/apache2.conf
+RUN echo "MaxSpareServers 2" >> /etc/apache2/apache2.conf
+RUN echo "memory_limit = 64M" >> /usr/local/etc/php/php.ini
+COPY wait-for-db.sh /usr/local/bin/wait-for-db.sh
+CMD ["bash", "/usr/local/bin/wait-for-db.sh"]
