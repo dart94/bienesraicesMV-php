@@ -1,5 +1,6 @@
-echo "vendor/
-node_modules/
-.git/
+.git
+.gitignore
 .env
-*.log" > .dockerignore
+*.log
+node_modules
+vendor
