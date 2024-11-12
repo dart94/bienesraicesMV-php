@@ -1,7 +1,6 @@
-# Usa una imagen base de PHP con Apache
 FROM php:8.2-apache
 
-# Instala dependencias del sistema y extensiones PHP necesarias
+# Instalar dependencias
 RUN apt-get update && apt-get install -y \
     libzip-dev \
     zip \
@@ -10,51 +9,40 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install mysqli zip pdo pdo_mysql \
     && a2enmod rewrite
 
-# Configura el ServerName
+# Configurar Apache
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
-# Configura el log de Apache para ser más detallado
-RUN echo "LogLevel debug" >> /etc/apache2/apache2.conf
+# Crear directorio para los logs
+RUN mkdir -p /var/log/apache2 \
+    && touch /var/log/apache2/error.log \
+    && touch /var/log/apache2/access.log \
+    && chown -R www-data:www-data /var/log/apache2
 
-# Crea los directorios necesarios
-RUN mkdir -p /var/www/html/public
-
-# Copia la configuración de Apache
-COPY ./000-default.conf /etc/apache2/sites-available/000-default.conf
-
-# Copia los archivos de la aplicación
+# Copiar archivos de la aplicación
 COPY . /var/www/html/
 
-# Configura permisos de forma más permisiva para debugging
+# Configurar permisos
 RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 777 /var/www/html \
-    && chmod -R 777 /var/log/apache2
+    && chmod -R 755 /var/www/html
 
-# Establece el directorio de trabajo
+# Instalar Composer e instalar dependencias
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+RUN composer install --no-interaction --no-dev --optimize-autoloader
+
+# Script de inicio
+RUN echo '#!/bin/bash\n\
+# Obtener el puerto de la variable de entorno o usar 80 por defecto\n\
+export PORT=${PORT:-80}\n\
+\n\
+# Configurar Apache para usar el puerto correcto\n\
+sed -i "s/Listen 80/Listen ${PORT}/g" /etc/apache2/ports.conf\n\
+sed -i "s/:80/:${PORT}/g" /etc/apache2/sites-available/*.conf\n\
+\n\
+# Iniciar Apache\n\
+apache2-foreground\n'\
+> /usr/local/bin/start-apache.sh \
+&& chmod +x /usr/local/bin/start-apache.sh
+
 WORKDIR /var/www/html
 
-# Crea un script de inicio que incluye verificación
-RUN echo '#!/bin/bash\n\
-echo "Starting Apache..."\n\
-echo "Current directory: $(pwd)"\n\
-echo "Directory contents:"\n\
-ls -la\n\
-echo "Apache configuration:"\n\
-apache2ctl -S\n\
-echo "Starting Apache in foreground..."\n\
-apache2-foreground' > /usr/local/bin/start.sh \
-&& chmod +x /usr/local/bin/start.sh
-
-# Puerto por defecto para Railway
-ENV PORT=80
-
-# Configura Apache para usar el puerto correcto
-RUN echo '#!/bin/bash\n\
-sed -i "s/Listen 80/Listen ${PORT:-80}/g" /etc/apache2/ports.conf\n\
-sed -i "s/:80/:${PORT:-80}/g" /etc/apache2/sites-available/*.conf\n\
-/usr/local/bin/start.sh' > /usr/local/bin/docker-entrypoint.sh \
-&& chmod +x /usr/local/bin/docker-entrypoint.sh
-
-EXPOSE ${PORT}
-
-CMD ["/usr/local/bin/docker-entrypoint.sh"]
+CMD ["/usr/local/bin/start-apache.sh"]
