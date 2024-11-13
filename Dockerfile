@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
     unzip \
     git \
     curl \
+    netcat \
     && docker-php-ext-install mysqli zip pdo pdo_mysql \
     && a2enmod rewrite
 
@@ -41,10 +42,5 @@ RUN mkdir -p /var/www/html/storage \
 # Expone el puerto 80
 EXPOSE 80
 
-# Script para modificar el archivo de configuración en tiempo de ejecución
-COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-
 # Define el comando de arranque
-ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["apache2-foreground"]

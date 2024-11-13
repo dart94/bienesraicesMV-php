@@ -5,7 +5,7 @@ services:
     plan: starter
     region: ohio
     buildCommand: docker build -t bienes-raices-mvc .
-    startCommand: docker run -p 80:80 bienes-raices-mvc
+    healthCheckPath: /
     envVars:
       - key: DB_HOST
         fromDatabase:
