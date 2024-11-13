@@ -23,7 +23,7 @@ RUN mkdir -p /var/log/apache2 \
 # Copiar archivos de la aplicación a la carpeta pública
 COPY --chown=www-data:www-data . /var/www/public
 
-# Configurar Apache
+# Copiar la configuración de Apache
 COPY 000-default.conf /etc/apache2/sites-available/000-default.conf
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
