@@ -1,17 +1,18 @@
 <?php
 
-function conectarDB() {
+function conectarDB(): mysqli
+{
     $db = new mysqli(
-        $_ENV['DB_HOST'] ?? 'db',
-        $_ENV['DB_USER'] ?? 'root',
-        $_ENV['DB_PASS'] ?? '1234',
-        $_ENV['DB_NAME'] ?? 'bienesraices_crud'
+        getenv('DB_HOST'),
+        getenv('DB_USER'),
+        getenv('DB_PASS'),
+        getenv('DB_NAME')
     );
 
-    if (!$db) {
-        echo "Error: No se pudo conectar a MySQL.";
-        echo "errno de depuración: " . mysqli_connect_errno();
-        echo "error de depuración: " . mysqli_connect_error();
+    $db->set_charset('utf8');
+
+    if ($db->connect_error) {
+        echo "Error, no se pudo conectar a la base de datos: " . $db->connect_error;
         exit;
     }
 
