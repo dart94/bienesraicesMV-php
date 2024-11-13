@@ -20,8 +20,8 @@ RUN mkdir -p /var/log/apache2 \
     && chown -R www-data:www-data /var/log/apache2 \
     && chmod -R 777 /var/log/apache2
 
-# Copiar archivos de la aplicación
-COPY --chown=www-data:www-data . /var/www/html/
+# Copiar archivos de la aplicación a la carpeta pública
+COPY --chown=www-data:www-data . /var/www/public
 
 # Configurar Apache
 COPY 000-default.conf /etc/apache2/sites-available/000-default.conf
