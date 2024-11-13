@@ -1,7 +1,16 @@
 <?php
+require_once __DIR__ . '/../vendor/autoload.php';
 
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
+$dotenv->load();
 function conectarDB(): mysqli
 {
+    // Debug: Imprime las variables de entorno para comprobar que se cargan correctamente
+    var_dump(getenv('DB_HOST'));
+    var_dump(getenv('DB_USER'));
+    var_dump(getenv('DB_PASS'));
+    var_dump(getenv('DB_NAME'));
+
     $db = new mysqli(
         getenv('DB_HOST'),
         getenv('DB_USER'),
