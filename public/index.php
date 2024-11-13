@@ -1,9 +1,5 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
-error_log("Index.php accessed at " . date('Y-m-d H:i:s'));
+session_start(); 
 
 require_once __DIR__ . '/../includes/app.php';
 
