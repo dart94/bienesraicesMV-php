@@ -1,14 +1,13 @@
 # Use una imagen oficial de PHP con Apache
 FROM php:8.2-apache
 
-# Instala extensiones necesarias (incluyendo mysqli para MySQL)
+# Instala extensiones necesarias
 RUN apt-get update && apt-get install -y \
     libzip-dev \
     zip \
     unzip \
     git \
     curl \
-    netcat \
     && docker-php-ext-install mysqli zip pdo pdo_mysql \
     && a2enmod rewrite
 
@@ -21,16 +20,14 @@ WORKDIR /var/www/html
 # Copia los archivos del proyecto
 COPY . .
 
-# Instalar dependencias de Composer si existe composer.json
+# Instalar dependencias de Composer
 RUN if [ -f "composer.json" ]; then composer install --no-dev --optimize-autoloader; fi
 
-# Copia la configuración de Apache
+# Configuración de Apache
 COPY ./000-default.conf /etc/apache2/sites-available/000-default.conf
-
-# Habilita el módulo rewrite
 RUN a2enmod rewrite
 
-# Establece el ServerName para evitar advertencias
+# Establece el ServerName
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
 # Crear directorio storage y ajustar permisos
@@ -39,8 +36,11 @@ RUN mkdir -p /var/www/html/storage \
     && chmod -R 755 /var/www/html \
     && chmod -R 777 /var/www/html/storage
 
-# Expone el puerto 80
+# Script para variables de entorno en tiempo de ejecución
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 EXPOSE 80
 
-# Define el comando de arranque
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["apache2-foreground"]

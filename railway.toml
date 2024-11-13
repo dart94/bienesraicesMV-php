@@ -3,8 +3,14 @@ builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "/usr/local/bin/start-apache.sh"
-healthcheckPath = "/health.php"
-healthcheckTimeout = 10
+startCommand = "apache2-foreground"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
+
+[[services]]
+internal_port = 80
+protocol = "tcp"
+
+[database]
+engine = "mysql"
+version = "5.7"
