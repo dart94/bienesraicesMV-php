@@ -1,65 +1,40 @@
+# Use una imagen oficial de PHP con Apache
 FROM php:8.2-apache
 
-# Instalar dependencias
+# Instala extensiones necesarias (incluyendo mysqli para MySQL)
 RUN apt-get update && apt-get install -y \
     libzip-dev \
     zip \
     unzip \
     git \
+    curl \
     && docker-php-ext-install mysqli zip pdo pdo_mysql \
     && a2enmod rewrite
 
-# Configurar el usuario Apache para que tenga acceso a los logs
-RUN usermod -u 1000 www-data \
-    && groupmod -g 1000 www-data
+# Instalar Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Configurar logs y permisos
-RUN mkdir -p /var/log/apache2 \
-    && touch /var/log/apache2/error.log \
-    && touch /var/log/apache2/access.log \
-    && chown -R www-data:www-data /var/log/apache2 \
-    && chmod -R 777 /var/log/apache2
+# Copia todo el proyecto a la imagen
+COPY . /var/www
 
-# Copiar archivos de la aplicación a la carpeta pública
-COPY --chown=www-data:www-data . /var/www/public
+# Instalar dependencias de Composer
+WORKDIR /var/www
+RUN composer install
 
-# Copiar la configuración de Apache
-COPY 000-default.conf /etc/apache2/sites-available/000-default.conf
+# Configura Apache para usar la carpeta public como el DocumentRoot
+COPY ./000-default.conf /etc/apache2/sites-available/000-default.conf
+
+# Habilita la reescritura de URL
+RUN a2enmod rewrite
+
+# Establece el ServerName para evitar advertencias
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
-# Script de health check
-RUN echo '#!/bin/bash\n\
-if curl -f http://localhost:${PORT:-80}/health.php; then\n\
-    exit 0\n\
-else\n\
-    exit 1\n\
-fi' > /usr/local/bin/docker-healthcheck \
-&& chmod +x /usr/local/bin/docker-healthcheck
+# Ajustar permisos de la carpeta del proyecto
+RUN chown -R www-data:www-data /var/www && chmod -R 755 /var/www
 
-# Copiar el script de inicio combinado
-COPY public/start-apache.sh /usr/local/bin/start-apache.sh
-RUN chmod +x /usr/local/bin/start-apache.sh
-
-# Configurar PHP
-RUN echo "error_reporting = E_ALL" >> /usr/local/etc/php/conf.d/error-reporting.ini \
-    && echo "display_errors = On" >> /usr/local/etc/php/conf.d/error-reporting.ini \
-    && echo "log_errors = On" >> /usr/local/etc/php/conf.d/error-reporting.ini
-
-# Optimización de Apache
-RUN echo "MaxRequestWorkers 5" >> /etc/apache2/apache2.conf
-RUN echo "StartServers 1" >> /etc/apache2/apache2.conf
-RUN echo "MinSpareServers 1" >> /etc/apache2/apache2.conf
-RUN echo "MaxSpareServers 2" >> /etc/apache2/apache2.conf
-
-# Configuración de PHP
-RUN echo "memory_limit = 64M" >> /usr/local/etc/php/php.ini
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
-    CMD /usr/local/bin/docker-healthcheck
-
-# Exponer puerto
+# Expone el puerto 80
 EXPOSE 80
 
-# Comando de inicio
-CMD ["/usr/local/bin/start-apache.sh"]
+# Define el comando de arranque
+CMD ["apache2-foreground"]
