@@ -2,11 +2,6 @@
 
 function conectarDB(): mysqli
 {
-    // Debug: Imprime las variables de entorno para comprobar que se cargan correctamente
-    var_dump(getenv('DB_HOST'));
-    var_dump(getenv('DB_USER'));
-    var_dump(getenv('DB_PASS'));
-    var_dump(getenv('DB_NAME'));
 
     $db = new mysqli(
         getenv('DB_HOST'),
