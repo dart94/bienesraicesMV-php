@@ -14,27 +14,37 @@ RUN apt-get update && apt-get install -y \
 # Instalar Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Copia todo el proyecto a la imagen
-COPY . /var/www
+# Establece el directorio de trabajo
+WORKDIR /var/www/html
 
-# Instalar dependencias de Composer
-WORKDIR /var/www
-RUN composer install
+# Copia los archivos del proyecto
+COPY . .
 
-# Configura Apache para usar la carpeta public como el DocumentRoot
+# Instalar dependencias de Composer si existe composer.json
+RUN if [ -f "composer.json" ]; then composer install --no-dev --optimize-autoloader; fi
+
+# Copia la configuración de Apache
 COPY ./000-default.conf /etc/apache2/sites-available/000-default.conf
 
-# Habilita la reescritura de URL
+# Habilita el módulo rewrite
 RUN a2enmod rewrite
 
 # Establece el ServerName para evitar advertencias
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
-# Ajustar permisos de la carpeta del proyecto
-RUN chown -R www-data:www-data /var/www && chmod -R 755 /var/www
+# Crear directorio storage y ajustar permisos
+RUN mkdir -p /var/www/html/storage \
+    && chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html \
+    && chmod -R 777 /var/www/html/storage
 
 # Expone el puerto 80
 EXPOSE 80
 
+# Script para modificar el archivo de configuración en tiempo de ejecución
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
 # Define el comando de arranque
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["apache2-foreground"]

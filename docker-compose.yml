@@ -1,23 +1,24 @@
 version: '3.8'
-
 services:
   web:
     build: .
     ports:
       - "8080:80"
     volumes:
-      - ./public:/var/www/html
+      - .:/var/www/html
+      - /var/www/html/vendor  # Excluye la carpeta vendor del montaje
     depends_on:
       - db
-    env_file:
-      - ./includes/.env
-      
     environment:
-      - MYSQL_HOST=db  # Opcional, para sobreescribir el valor del archivo .env si lo necesitas en Docker
-      - MYSQL_USER=root
-      - MYSQL_PASSWORD=1234
-      - MYSQL_DATABASE=bienesraices_crud
-
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASS=1234
+      - DB_NAME=bienesraices_crud
+      - EMAIL_HOST=sandbox.smtp.mailtrap.io
+      - EMAIL_PORT=2525
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_PASS=${EMAIL_PASS}
+  
   db:
     image: mysql:5.7
     ports:
@@ -28,6 +29,7 @@ services:
     volumes:
       - db_data:/var/lib/mysql
       - ./includes/bienesraices_crud.sql:/docker-entrypoint-initdb.d/bienesraices_crud.sql
-
+    command: --default-authentication-plugin=mysql_native_password
+    
 volumes:
   db_data:
