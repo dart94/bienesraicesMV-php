@@ -8,7 +8,11 @@ RUN apt-get update && apt-get install -y \
     unzip \
     git \
     curl \
-    && docker-php-ext-install mysqli zip pdo pdo_mysql \
+    libfreetype6-dev \
+    libjpeg62-turbo-dev \
+    libpng-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install mysqli zip pdo pdo_mysql gd \
     && a2enmod rewrite
 
 # Instalar Composer
