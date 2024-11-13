@@ -1,8 +1,12 @@
 #!/bin/bash
-until mysql -h"$MYSQL_HOST" -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -e "SHOW DATABASES;" &> /dev/null
+echo "Esperando que la base de datos MySQL esté disponible..."
+MAX_RETRIES=10
+RETRIES=0
+until mysql -h"$MYSQL_HOST" -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" -e "SHOW DATABASES;" &> /dev/null || [ $RETRIES -eq $MAX_RETRIES ]
 do
-  echo "Waiting for MySQL to be ready..."
+  echo "No se puede conectar a MySQL en $MYSQL_HOST. Intento $((RETRIES+1)) de $MAX_RETRIES"
   sleep 3
+  RETRIES=$((RETRIES+1))
 done
-
-apache2-foreground
+echo "Iniciando Apache..."
+exec apache2-foreground

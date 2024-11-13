@@ -85,7 +85,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
     CMD /usr/local/bin/docker-healthcheck
 
 # Exponer puerto
-EXPOSE ${PORT}
+EXPOSE 80
 
 # Comando de inicio combinado
 CMD ["/usr/local/bin/start-apache.sh"]
